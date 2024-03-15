@@ -45,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           children: [
             SizedBox(
-              height: 100.0,
+              height: 50.0,
             ),
             Icon(
               Icons.wechat,
