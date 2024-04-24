@@ -3,92 +3,114 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
 
-class WeatherData {
-  final DateTime time;
-  final double temperature2m;
-  final double rain;
-  final double showers;
-  final double snowfall;
-  final double cloudCover;
-  final double cloudCoverLow;
-  final double cloudCoverMid;
-  final double cloudCoverHigh;
+//api key = 38f1edd443f7c53cc9d5694620f187f9
+//api call = https://api.openweathermap.org/data/3.0/onecall?lat=45.51&lon=-73.56&units=metric&appid=38f1edd443f7c53cc9d5694620f187f9
+class WeatherInfo {
+  final String imageUrl;
+  final String description;
 
-  WeatherData({
+  WeatherInfo({required this.imageUrl, required this.description});
+}
+
+class CurrentWeather {
+  final DateTime time;
+  final double temperature;
+  final int weatherCode;
+  final bool isDay;
+  final double precipitation;
+  final int cloudCover;
+  final double windSpeed;
+
+  CurrentWeather({
     required this.time,
-    required this.temperature2m,
-    required this.rain,
-    required this.showers,
-    required this.snowfall,
+    required this.temperature,
+    required this.weatherCode,
+    required this.isDay,
+    required this.precipitation,
     required this.cloudCover,
-    required this.cloudCoverLow,
-    required this.cloudCoverMid,
-    required this.cloudCoverHigh,
+    required this.windSpeed,
   });
 
-  factory WeatherData.fromJson(Map<String, dynamic> json) {
-    // Use a helper function to safely get values from the JSON
-    double getDouble(dynamic source) {
-      try {
-        if (source is int) {
-          return source.toDouble();
-        } else if (source is double) {
-          return source;
-        } else if (source is String) {
-          return double.parse(source);
-        }
-        return 0.0;
-      } catch (e) {
-        print('Error parsing double value: $e');
-        return 0.0;
-      }
-    }
-
-    return WeatherData(
+  factory CurrentWeather.fromJson(Map<String, dynamic> json) {
+    return CurrentWeather(
       time: DateTime.parse(json['time']),
-      temperature2m: getDouble(json['temperature_2m']),
-      rain: getDouble(json['rain']),
-      showers: getDouble(json['showers']),
-      snowfall: getDouble(json['snowfall']),
-      cloudCover: getDouble(json['cloud_cover']),
-      cloudCoverLow: getDouble(json['cloud_cover_low']),
-      cloudCoverMid: getDouble(json['cloud_cover_mid']),
-      cloudCoverHigh: getDouble(json['cloud_cover_high']),
+      temperature: json['temperature_2m'].toDouble(),
+      weatherCode: json['weather_code'],
+      isDay: json['is_day'] == 1,
+      precipitation: json['precipitation'].toDouble(),
+      cloudCover: json['cloud_cover'],
+      windSpeed: json['wind_speed_10m'].toDouble(),
     );
   }
 }
 
-Future<List<WeatherData>> fetchWeatherData() async {
-  final url = Uri.parse('https://api.open-meteo.com/v1/forecast?latitude=45.5088&longitude=-73.5878&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,cloud_cover,wind_speed_10m&hourly=temperature_2m,rain,showers,snowfall,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high&timezone=America%2FNew_York');
+Future<CurrentWeather> fetchCurrentWeather() async {
+  final url = Uri.parse(
+      'https://api.open-meteo.com/v1/forecast?latitude=45.5088&longitude=-73.5878&current=temperature_2m,is_day,precipitation,weather_code,cloud_cover,wind_speed_10m&hourly=temperature_2m,weather_code&timezone=America%2FNew_York');
+
   final response = await http.get(url);
+
   if (response.statusCode == 200) {
-    try {
-      final decodedData = json.decode(response.body);
-      final hourlyData = decodedData['hourly'];
-      List<WeatherData> weatherDataList = [];
+    final jsonResponse = json.decode(response.body);
+    final currentWeatherJson = jsonResponse['current'];
+    return CurrentWeather.fromJson(currentWeatherJson);
+  } else {
+    throw Exception('Failed to load current weather data');
+  }
+}
 
-      for (int i = 0; i < hourlyData['time'].length; i++) {
-        weatherDataList.add(WeatherData(
-          time: DateTime.parse(hourlyData['time'][i]),
-          temperature2m: hourlyData['temperature_2m'][i].toDouble(),
-          rain: hourlyData['rain'][i].toDouble(),
-          showers: hourlyData['showers'][i].toDouble(),
-          snowfall: hourlyData['snowfall'][i].toDouble(),
-          cloudCover: hourlyData['cloud_cover'][i].toDouble(),
-          cloudCoverLow: hourlyData['cloud_cover_low'][i].toDouble(),
-          cloudCoverMid: hourlyData['cloud_cover_mid'][i].toDouble(),
-          cloudCoverHigh: hourlyData['cloud_cover_high'][i].toDouble(),
-        ));
+class HourlyWeather {
+  final DateTime time;
+  final double temperature;
+  final int weatherCode;
+
+  HourlyWeather({
+    required this.time,
+    required this.temperature,
+    required this.weatherCode,
+  });
+
+  Future<Map<String, dynamic>> loadWeatherData() async {
+    final jsonString = await rootBundle.loadString('assets/weatherIcon.json');
+    return json.decode(jsonString);
+  }
+
+  factory HourlyWeather.fromJson(Map<String, dynamic> json) {
+    return HourlyWeather(
+      time: DateTime.parse(json['time']),
+      temperature: json['temperature_2m'].toDouble(),
+      weatherCode: json['weather_code'],
+    );
+  }
+}
+
+Future<List<HourlyWeather>> fetchHourlyWeather() async {
+  final url = Uri.parse(
+      'https://api.open-meteo.com/v1/forecast?latitude=45.5088&longitude=-73.5878&current=temperature_2m,is_day,precipitation,weather_code,cloud_cover,wind_speed_10m&hourly=temperature_2m,weather_code&timezone=America%2FNew_York');
+  final response = await http.get(url);
+
+  if (response.statusCode == 200) {
+    Map<String, dynamic> data = json.decode(response.body);
+    if (data.containsKey('hourly') && data['hourly'] != null) {
+      List<dynamic> times = data['hourly']['time'];
+      List<dynamic> temperatures = data['hourly']['temperature_2m'];
+      List<dynamic> weatherCodes = data['hourly']['weather_code'];
+
+      List<HourlyWeather> hourlyForecasts = [];
+      for (int i = 0; i < times.length; i++) {
+        hourlyForecasts.add(HourlyWeather.fromJson({
+          'time': times[i],
+          'temperature_2m': temperatures[i],
+          'weather_code': weatherCodes[i],
+        }));
       }
-
-      return weatherDataList;
-    } catch (e) {
-      print('Error occurred while parsing weather data: $e');
-      return [];
+      return hourlyForecasts;
+    } else {
+      throw Exception('Hourly data not available in the response');
     }
   } else {
-    print('Request failed with status: ${response.statusCode}.');
-    throw Exception('Failed to load weather data');
+    throw Exception(
+        'Failed to load hourly weather data with status code: ${response.statusCode}');
   }
 }
 
@@ -104,107 +126,157 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: WeatherScreen(),
+      home: FutureBuilder(
+        future: fetchWeatherData(),
+        builder: (context, AsyncSnapshot<WeatherData> snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            if (snapshot.hasError) {
+              return Center(child: Text("Error: ${snapshot.error}"));
+            } else if (snapshot.hasData) {
+              return WeatherScreen(
+                currentWeather: snapshot.data!.currentWeather,
+                hourlyForecast: snapshot.data!.hourlyWeather,
+              );
+            }
+          }
+          return Center(child: CircularProgressIndicator());
+        },
+      ),
     );
   }
 }
 
-class WeatherScreen extends StatefulWidget {
-  @override
-  _WeatherScreenState createState() => _WeatherScreenState();
+Future<WeatherData> fetchWeatherData() async {
+  CurrentWeather currentWeather = await fetchCurrentWeather();
+  List<HourlyWeather> hourlyWeather = await fetchHourlyWeather();
+  return WeatherData(
+      currentWeather: currentWeather, hourlyWeather: hourlyWeather);
 }
 
-class _WeatherScreenState extends State<WeatherScreen> {
-  late Future<List<WeatherData>> futureWeatherData;
+class WeatherData {
+  final CurrentWeather currentWeather;
+  final List<HourlyWeather> hourlyWeather;
 
-  @override
-  void initState() {
-    super.initState();
-    futureWeatherData = fetchWeatherData();  // Implement this function based on your API
-  }
+  WeatherData({required this.currentWeather, required this.hourlyWeather});
+}
+
+class WeatherScreen extends StatelessWidget {
+  final CurrentWeather currentWeather;
+  final List<HourlyWeather> hourlyForecast;
+
+  WeatherScreen({required this.currentWeather, required this.hourlyForecast});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue[300], // Change this to match your design color
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: <Widget>[
-              _buildLocationRow(), // You'll define this below
-              Spacer(),
-              FutureBuilder<List<WeatherData>>(
-                future: futureWeatherData,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return CircularProgressIndicator();
-                  } else if (snapshot.hasError) {
-                    return Text('Error: ${snapshot.error}');
-                  } else if (snapshot.hasData) {
-                    return _buildWeatherInfo(snapshot.data!); // You'll define this below
-                  } else {
-                    return Text('No weather data available');
-                  }
-                },
-              ),
-              Spacer(),
-              _buildHourlyForecast(), // You'll define this below
-            ],
+      backgroundColor: Colors.blue[300],
+      appBar: AppBar(
+        title: Text('Weather App'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            flex: 3,
+            child: _buildCurrentWeather(currentWeather),
           ),
-        ),
+          Expanded(
+            flex: 2,
+            child: _buildHourlyForecast(hourlyForecast),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildLocationRow() {
-    // Placeholder for location row
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: <Widget>[
-        Text('Mumbai', style: TextStyle(color: Colors.white, fontSize: 24.0)),
-        Icon(Icons.keyboard_arrow_down, color: Colors.white),
-      ],
-    );
-  }
-
-  Widget _buildWeatherInfo(List<WeatherData> data) {
-    // Placeholder for main weather info
-    return Column(
-      children: <Widget>[
-        Text('${data.temperature2m.toStringAsFixed(1)}°', style: TextStyle(fontSize: 80, color: Colors.white, fontWeight: FontWeight.bold)),
-        Text(data.weatherCondition, style: TextStyle(color: Colors.white, fontSize: 24.0)),
-        Text(DateFormat('EEEE, MMMM d').format(data.time), style: TextStyle(color: Colors.white, fontSize: 16.0)),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            // Icons and data for wind, humidity, etc.
-          ],
-        )
-      ],
-    );
-  }
-
-  Widget _buildHourlyForecast() {
-    // Placeholder for hourly forecast
-    return Container(
-      height: 120,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: 24, // Placeholder for hourly forecast count
-        itemBuilder: (context, index) {
-          // Placeholder for hourly weather data
-          return Card(
-            color: Colors.blue[600],
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
+  Widget _buildCurrentWeather(CurrentWeather weather) {
+    return FutureBuilder<WeatherInfo>(
+      future: weather.getWeatherData(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          if (snapshot.hasData) {
+            return Center(
               child: Column(
-                children: <Widget>[
-                  Text('00:00', style: TextStyle(color: Colors.white)),
-                  Icon(Icons.cloud, color: Colors.white),
-                  Text('27°', style: TextStyle(color: Colors.white)),
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.network(snapshot.data!.imageUrl),
+                  Text(
+                    '${weather.temperature.toInt()}°',
+                    style: TextStyle(fontSize: 100, color: Colors.white),
+                  ),
+                  Text(
+                    snapshot.data!.description,
+                    // Consider using snapshot data for description too
+                    style: TextStyle(fontSize: 24, color: Colors.white),
+                  ),
+                  Text(
+                    DateFormat('EEEE, MMMM d').format(weather.time),
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.air, color: Colors.white),
+                      Text('${weather.windSpeed}km/h',
+                          style: TextStyle(color: Colors.white)),
+                      SizedBox(width: 16), // Space between items
+                      Icon(Icons.opacity, color: Colors.white),
+                      Text('${weather.precipitation}%',
+                          style: TextStyle(color: Colors.white)),
+                      SizedBox(width: 16), // Space between items
+                      Icon(Icons.cloud, color: Colors.white),
+                      Text('${weather.cloudCover}%',
+                          style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
                 ],
               ),
+            );
+          } else {
+            return Text("Error loading weather icon.");
+          }
+        } else {
+          return CircularProgressIndicator();
+        }
+      },
+    );
+  }
+
+  Widget _buildHourlyForecast(List<HourlyWeather> forecast) {
+    return Container(
+      height: 120, // Fixed height for the hourly forecast list
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: forecast.length,
+        itemBuilder: (context, index) {
+          final hourlyWeather = forecast[index];
+          return Container(
+            width: 80,
+            margin: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade400, // Match card color to the image
+              borderRadius: BorderRadius.circular(15), // Rounded corners
+            ),
+            padding: EdgeInsets.all(8),
+            alignment: Alignment.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  DateFormat('ha').format(hourlyWeather.time),
+                  style: TextStyle(color: Colors.white),
+                ),
+                // Assuming you have a default weather icon
+                Icon(
+                  Icons.wb_sunny,
+                  color: Colors.white,
+                ),
+                Text(
+                  '${hourlyWeather.temperature.toInt()}°',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ],
             ),
           );
         },
