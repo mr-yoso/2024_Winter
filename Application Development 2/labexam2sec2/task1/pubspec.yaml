@@ -30,7 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  audioplayers: ^1.1.1
+  audioplayers: any
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -63,13 +63,13 @@ flutter:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
   assets:
-    - assets/note1.mp3
-    - assets/note2.mp3
-    - assets/note3.mp3
-    - assets/note4.mp3
-    - assets/note5.mp3
-    - assets/note6.mp3
-    - assets/note7.mp3
+    - assets/sounds/note1.mp3
+    - assets/sounds/note2.mp3
+    - assets/sounds/note3.mp3
+    - assets/sounds/note4.mp3
+    - assets/sounds/note5.mp3
+    - assets/sounds/note6.mp3
+    - assets/sounds/note7.mp3
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

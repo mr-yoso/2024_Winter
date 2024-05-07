@@ -1,125 +1,159 @@
+import 'dart:math';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'True or False Quiz',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: QuizPage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class QuizPage extends StatefulWidget {
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _QuizPageState createState() => _QuizPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _QuizPageState extends State<QuizPage> {
+  int _currentQuestionIndex = 0;
+  int _questionIndex = Random().nextInt(10);
+  int _score = 0;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  final List<Map<String, dynamic>> _questions = [
+    {
+      'text': 'The blue whale is the biggest animal to have ever lived.',
+      'answer': true
+    },
+    {'text': 'An ant can lift 1,000 times its body weight.', 'answer': false},
+    {
+      'text': 'The Atlantic Ocean is the biggest ocean on Earth.',
+      'answer': false
+    },
+    {
+      'text': 'Mount Everest is the tallest mountain in the world.',
+      'answer': true
+    },
+    {'text': 'Human skin regenerates every week.', 'answer': false},
+    {
+      'text': 'The average human sneeze can be clocked at 100 miles an hour.',
+      'answer': true
+    },
+    {'text': 'Hawaiian pizza comes from Canada.', 'answer': true},
+    {
+      'text':
+          'Mcdonald\'s has the most restaurants by location in the United States.',
+      'answer': false
+    },
+    {
+      'text': 'Three strikes in a row in bowling is called a chicken.',
+      'answer': false
+    },
+    {
+      'text':
+          'Brazil is the only nation to have played in every World Cup finals tournament.',
+      'answer': true
+    },
+  ];
+
+  void _answerQuestion(bool userAnswer) {
+    if (_questions[_questionIndex]['answer'] == userAnswer) {
+      _score++;
+    }
+
+    if (_currentQuestionIndex < _questions.length - 1) {
+      setState(() {
+        _currentQuestionIndex++;
+        _questionIndex = Random().nextInt(10);
+      });
+    } else {
+      _showFinalScore();
+      _questionIndex = Random().nextInt(10);
+    }
+  }
+
+  void _showFinalScore() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Your score: $_score/${_questions.length}'),
+        content: Text('Finished \nYou\'ve reached the end of the quiz.'),
+        actions: <Widget>[
+          TextButton(
+            child: Text('Restart'),
+            onPressed: () {
+              setState(() {
+                _currentQuestionIndex = 0;
+                _score = 0;
+              });
+              Navigator.of(ctx).pop(); // Close the dialog
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Text('True or False Quiz'),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Text(
+            _questions[_questionIndex]['text'],
+            style: TextStyle(fontSize: 24),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 100),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    style:
+                        ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                    child: Text(
+                      'True',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onPressed: () => _answerQuestion(true),
+                  ),
+                ),
+              ],
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                    child: Text(
+                      'False',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onPressed: () => _answerQuestion(false),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
