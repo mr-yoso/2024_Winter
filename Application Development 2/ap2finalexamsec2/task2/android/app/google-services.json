@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "973497654356",
+    "project_id": "ap2finalexamsec2",
+    "storage_bucket": "ap2finalexamsec2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:973497654356:android:4c2cc4b46f439f7510e1c1",
+        "android_client_info": {
+          "package_name": "com.example.task2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7HttbWh_YN1HBcGbBEAyTw73h4GCDriI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
